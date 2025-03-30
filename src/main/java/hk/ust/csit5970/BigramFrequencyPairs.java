@@ -2,6 +2,8 @@ package hk.ust.csit5970;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Iterator;
+
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -49,10 +51,24 @@ public class BigramFrequencyPairs extends Configured implements Tool {
 				throws IOException, InterruptedException {
 			String line = ((Text) value).toString();
 			String[] words = line.trim().split("\\s+");
-			
-			/*
-			 * TODO: Your implementation goes here.
-			 */
+
+
+			if (words.length > 1){
+				String previous_word = words[0];
+				for (int i = 1; i < words.length; i++) {
+				    BIGRAM.set(previous_word, "");
+				    context.write(BIGRAM, ONE);
+
+					String w = words[i];
+					// Skip empty words
+					if (w.length() == 0) {
+						continue;
+					}
+					BIGRAM.set(previous_word, w);
+					context.write(BIGRAM, ONE);
+					previous_word = w;
+				}
+			}
 		}
 	}
 
@@ -71,9 +87,30 @@ public class BigramFrequencyPairs extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+
+				if (key.getRightElement().length() == 0) {
+                int sum = 0;
+                Iterator<IntWritable> iter = values.iterator();
+                while (iter.hasNext()) {
+                    sum += iter.next().get();
+                }
+                VALUE.set(sum);
+                context.write(key, VALUE);
+                return;
+            }
+            float f_prev = VALUE.get();
+
+            int sum = 0;
+            Iterator<IntWritable> iter = values.iterator();
+            while (iter.hasNext()) {
+                sum += iter.next().get();
+            }
+            VALUE.set(sum / f_prev);
+            context.write(key, VALUE);
+            VALUE.set(f_prev);
 		}
 	}
-	
+
 	private static class MyCombiner extends
 			Reducer<PairOfStrings, IntWritable, PairOfStrings, IntWritable> {
 		private static final IntWritable SUM = new IntWritable();
@@ -84,6 +121,14 @@ public class BigramFrequencyPairs extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+
+				Iterator<IntWritable> iter = values.iterator();
+				int sum = 0;
+				while (iter.hasNext()) {
+					sum += iter.next().get();
+				}
+				SUM.set(sum);
+				context.write(key, SUM);
 		}
 	}
 

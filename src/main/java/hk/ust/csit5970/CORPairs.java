@@ -53,6 +53,10 @@ public class CORPairs extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			while (doc_tokenizer.hasMoreTokens()) {
+			    String word = doc_tokenizer.nextToken();
+                context.write(new Text(word), new IntWritable(1));
+            }
 		}
 	}
 
@@ -66,6 +70,12 @@ public class CORPairs extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+
+			int sum = 0;
+			for (IntWritable value: values) {
+                sum += value.get();
+            }
+            context.write(key, new IntWritable(sum));
 		}
 	}
 
@@ -81,6 +91,36 @@ public class CORPairs extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			PairOfStrings pair = new PairOfStrings();
+			IntWritable one = new IntWritable(1);
+
+			Set<String> word_set = new HashSet<String>();
+			while (doc_tokenizer.hasMoreTokens()) {
+                String word = doc_tokenizer.nextToken();
+                if (word_set.contains(word)) {
+                    continue;
+                }
+                word_set.add(word);
+			}
+
+			Set<PairOfStrings> word_pair_set = new HashSet<PairOfStrings>();
+			for (String word1 : word_set) {
+                for (String word2 : word_set) {
+                    if (word1.equals(word2)) {
+                        continue;
+                    }
+                    if (word1.compareTo(word2) < 0) {
+                        pair.set(word1, word2);
+                    } else {
+                        pair.set(word2, word1);
+                    }
+                    if (word_pair_set.contains(pair)) {
+                        continue;
+                    }
+                    word_pair_set.add(pair);
+                    context.write(pair, one);
+                }
+            }
 		}
 	}
 
@@ -93,6 +133,11 @@ public class CORPairs extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+            int sum = 0;
+            for (IntWritable value : values) {
+                sum += value.get();
+            }
+            context.write(key, new IntWritable(sum));
 		}
 	}
 
@@ -145,6 +190,15 @@ public class CORPairs extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+
+			int sum = 0;
+			for (IntWritable value : values) {
+                sum += value.get();
+            }
+            double f_1 = word_total_map.get(key.getLeftElement());
+            double f_2 = word_total_map.get(key.getRightElement());
+            double freq = (double) sum / (f_1 * f_2);
+            context.write(key, new DoubleWritable(freq));
 		}
 	}
 
